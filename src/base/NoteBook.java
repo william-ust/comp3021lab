@@ -112,4 +112,10 @@ public class NoteBook implements Serializable {
 		}
 		return true;
 	}
+	
+	// Modified (lab 8)
+	public void addFolder(String folderName) {
+		Folder newFolder = new Folder(folderName);
+		folders.add(newFolder);
+	}
 }

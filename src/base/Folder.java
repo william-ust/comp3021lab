@@ -65,66 +65,97 @@ public class Folder implements Comparable<Folder>, Serializable {
 		Collections.sort(notes);
 	}
 	
-	// Not Functional
+	// Fixed searchNotes
 	public List<Note> searchNotes(String keywords) {
-		List<Note> result = new ArrayList<Note>();
-		Stack<String> andList = new Stack<String>();
-		Stack<String> orList = new Stack<String>();
+		ArrayList<Note> result = new ArrayList<Note>();
 		
-		String[] separate_key = keywords.split(" ");
+		// ignore capital letter and split the keywords using space
+		String[] keyList = keywords.toLowerCase().split(" ");
 		
-		for (int i = 0; i < separate_key.length; i++) {
-			separate_key[i] = separate_key[i].toLowerCase();
+		for (int i = 0; i < keyList.length; i++) {
+			ArrayList<Note> temp = new ArrayList<Note>();
 			
-			if (separate_key[i] != "or") {
-				andList.push(separate_key[i]);
-			}
-			
-			else if (separate_key[i] == "or") {
-
-				String temp = andList.pop();
-				orList.push(temp);
-				orList.push(separate_key[i+1]);
-				i+=1;
-			}
-		}
-		
-		List<Note> temp_result = new ArrayList<Note>();
-		
-		for (String s : orList) {
-			for (Note n : notes) {
-				if (n.getTitle().toLowerCase().contains(s)) {
-					temp_result.add(n);
-					continue;
+			// if the next word is an or operator
+			if (i + 1 < keyList.length && keyList[i + 1].equals("or")) {
+				
+				// search every Note in notes for (keyword keyList[i] and keyword keyList[i + 2])
+				for (Note n : notes) {
+					
+					// if it is ImageNote
+					if (n instanceof ImageNote) {
+						
+						// if it contains the keyword
+						if ( 	n.getTitle().toLowerCase().contains(keyList[i]) || 
+								n.getTitle().toLowerCase().contains(keyList[i + 2]))
+							temp.add(n);
+					}
+					
+					// if it is TextNote
+					else if (n instanceof TextNote) {
+						
+						// if it contains the keyword in title
+						if (	n.getTitle().toLowerCase().contains(keyList[i]) ||
+								n.getTitle().toLowerCase().contains(keyList[i + 2]))
+							temp.add(n);
+						
+						// if it contains the keywords in content
+						else if ( 	( (TextNote) n ).content.toLowerCase().contains(keyList[i]) || 
+									( (TextNote) n ).content.toLowerCase().contains(keyList[i + 2]))
+							temp.add(n);
+							
+					}
 				}
 				
-				if (n instanceof TextNote)
-					if (((TextNote)n).content.toLowerCase().contains(s))
-						temp_result.add(n);
-
+				// directly store the result if first time
+				if (i == 0)
+					result.addAll(temp);
+				else
+					// AND
+					result.retainAll(temp);
+				
+				// update progress 
+				// finished processing keyList[i + 2]
+				i += 2;
+			
+			// if next word is a keyword
+			} else {
+				
+				// search every Note in notes for (keyword keyList[i])
+				for (Note n : notes) {
+					
+					// if it is ImageNote
+					if (n instanceof ImageNote) {
+						
+						// if it contains the keyword
+						if (n.getTitle().toLowerCase().contains(keyList[i]))
+							temp.add(n);
+					}
+					
+					// if it is TextNote
+					else if (n instanceof TextNote) {
+						
+						// if it contains the keyword in title
+						if (n.getTitle().toLowerCase().contains(keyList[i]))
+							temp.add(n);
+						
+						// if it contains the keywords in content
+						else if ( ( (TextNote) n ).content.toLowerCase().contains(keyList[i]))
+							temp.add(n);	
+					}
+				}
+				
+				// directly store the result if first time		
+				if (i == 0)
+					result.addAll(temp);
+				else
+					// AND
+					result.retainAll(temp);	
 			}
 		}
 		
-		for (Note n : temp_result) {
-			int num_match = 0;
-			for (String s : andList) {
-				if (n.getTitle().toLowerCase().contains(s)) {
-					num_match++;
-					continue;
-				}
-				
-				if (n instanceof TextNote)
-					if (((TextNote)n).content.toLowerCase().contains(s))
-						num_match++;
-			}
-			
-			if (num_match == andList.size())
-				result.add(n);
-		}
-		if (andList.size() == 0)
-			return temp_result;
 		return result;
 	}
+	
 	
 	public boolean save(String file) {
 		FileOutputStream fos = null;
@@ -143,4 +174,19 @@ public class Folder implements Comparable<Folder>, Serializable {
 		return true;
 	}
 
+	public boolean removeNotes(String title) {
+		Note note = null;
+		
+		for (Note n : notes) {
+			if (n.getTitle().equals(title)) {
+				note = n;
+				break;
+			}
+		}
+	
+		if (note != null)
+			return notes.remove(note);
+		else
+			return false;
+	}
 }
